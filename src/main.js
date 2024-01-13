@@ -97,6 +97,14 @@ loadMoreButton.addEventListener('click', async function () {
     if (images.length > 0) {
       displayImages(images);
       showPaginationInfo(response.data.totalHits);
+
+      const cardHeight = gallery.firstElementChild.clientHeight;
+      console.log(cardHeight);
+
+      window.scrollBy({
+        top: cardHeight * 2,
+        behavior: 'smooth',
+      });
     } else {
       showErrorToastNoImages();
     }
@@ -166,6 +174,7 @@ function displayImages(images) {
   });
 
   gallery.appendChild(fragment);
+
   const lightbox = new SimpleLightbox('.gallery a');
   lightbox.refresh();
 }
