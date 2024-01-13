@@ -132,3 +132,18 @@ body {
     transform: translateX(-99%);
   }
 }
+
+.load-more-btn {
+  margin-left: 16px;
+  margin-top: 24px;
+  font-size: 18px;
+  color: #fff;
+  font-weight: 500;
+  border-radius: 8px;
+  background: #4e75ff;
+  border: none;
+  height: 40px;
+  width: 105px;
+  outline: none;
+  transition: background-color 250ms ease;
+}
