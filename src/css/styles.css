@@ -133,9 +133,19 @@ body {
   }
 }
 
-.load-more-btn {
-  margin-left: 16px;
+.pagination-more {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
   margin-top: 24px;
+}
+
+.load-more-btn {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  margin-left: 16px;
   font-size: 18px;
   color: #fff;
   font-weight: 500;
@@ -146,4 +156,20 @@ body {
   width: 105px;
   outline: none;
   transition: background-color 250ms ease;
+}
+
+.visible {
+  display: flex;
+}
+
+.not-visible {
+  display: none;
+}
+
+.load-more-btn:hover {
+  background-color: #6c8cff;
+}
+
+#pagination-info {
+  text-align: center;
 }

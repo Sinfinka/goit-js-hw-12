@@ -9,16 +9,21 @@ const searchInput = document.querySelector('.input');
 const gallery = document.getElementById('gallery');
 const loader = document.querySelector('.loader');
 const loadMoreButton = document.querySelector('.load-more-btn');
+const paginationInfo = document.getElementById('pagination-info');
 
-const apiKey = '41719954-f83183d98e199e8ea762c32d5'; // код з Pixabay
+const apiKey = '41719954-f83183d98e199e8ea762c32d5';
 let currentPage = 1;
 let searchTerm = '';
 
 function showLoadMoreButton() {
-  loadMoreButton.style.display = gallery.children.length > 0 ? 'block' : 'none';
+  if (gallery.children.length > 0) {
+    loadMoreButton.classList.add('visible');
+  } else {
+    loadMoreButton.classList.add('not-visible');
+  }
 }
 
-function showErrorToast() {
+function showErrorToastNoImages() {
   iziToast.error({
     title: 'Error',
     message:
@@ -27,6 +32,28 @@ function showErrorToast() {
     timeout: 3500,
     progressBar: false,
   });
+}
+
+function showCautionToastRechedTheEnd() {
+  iziToast.warning({
+    title: 'Caution',
+    message: "We're sorry, but you've reached the end of search results.",
+    position: 'topRight',
+    timeout: 3500,
+    progressBar: false,
+    color: 'blue',
+  });
+}
+
+function showPaginationInfo(totalHits) {
+  const perPage = 40;
+  const totalPages = Math.ceil(totalHits / perPage);
+  paginationInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+
+  if (parseInt(totalPages, 10) <= parseInt(currentPage, 10)) {
+    loadMoreButton.classList.add('not-visible');
+    showCautionToastRechedTheEnd();
+  }
 }
 
 form.addEventListener('submit', async function (event) {
@@ -42,11 +69,14 @@ form.addEventListener('submit', async function (event) {
   currentPage = 1;
 
   try {
-    const images = await fetchImages();
+    const response = await fetchImages();
+    const images = response.data.hits;
+
     if (images.length > 0) {
       displayImages(images);
+      showPaginationInfo(response.data.totalHits);
     } else {
-      showErrorToast();
+      showErrorToastNoImages();
     }
   } catch (error) {
     console.error('Error fetching data:', error);
@@ -61,11 +91,18 @@ loadMoreButton.addEventListener('click', async function () {
   currentPage++;
 
   try {
-    const images = await fetchImages();
-    displayImages(images);
+    const response = await fetchImages();
+    const images = response.data.hits;
+
+    if (images.length > 0) {
+      displayImages(images);
+      showPaginationInfo(response.data.totalHits);
+    } else {
+      showErrorToastNoImages();
+    }
   } catch (error) {
     console.error('Error fetching more data:', error);
-    showErrorToast();
+    showErrorToastNoImages();
   } finally {
     loader.classList.add('hide');
     showLoadMoreButton();
@@ -78,7 +115,7 @@ function fetchImages() {
     searchTerm
   )}&image_type=photo&orientation=horizontal&safesearch=true&page=${currentPage}&per_page=${perPage}`;
 
-  return axios.get(apiUrl).then(response => response.data.hits);
+  return axios.get(apiUrl);
 }
 
 function displayImages(images) {
