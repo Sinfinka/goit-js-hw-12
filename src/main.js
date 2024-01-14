@@ -65,7 +65,6 @@ function showPaginationInfo(totalHits) {
   paginationInfo.textContent = `Page ${currentPage} of ${totalPages}`;
 
   if (parseInt(totalPages, 10) <= parseInt(currentPage, 10)) {
-    console.log('pag');
     showLoadMoreButton(totalHits);
     showCautionToastRechedTheEnd();
   }
@@ -140,7 +139,7 @@ async function fetchImages() {
   )}&image_type=photo&orientation=horizontal&safesearch=true&page=${currentPage}&per_page=${perPage}`;
 
   try {
-    loader.classList.remove('hide'); // Показати елемент-завантажувача перед запитом
+    loader.classList.remove('hide');
 
     const response = await axios.get(apiUrl);
     const images = response.data.hits;
@@ -157,9 +156,9 @@ async function fetchImages() {
   } catch (error) {
     console.error('Error fetching data:', error);
     showErrorToastNoImages();
-    throw error; // Передати помилку для обробки в блоку finally
+    throw error;
   } finally {
-    loader.classList.add('hide'); // Приховати елемент-завантажувача після завершення запиту
+    loader.classList.add('hide');
   }
 }
 
