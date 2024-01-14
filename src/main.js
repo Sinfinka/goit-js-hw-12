@@ -16,17 +16,18 @@ const apiKey = '41719954-f83183d98e199e8ea762c32d5';
 let currentPage = 1;
 let searchTerm = '';
 let isToastDisplayed = false;
+let totalHits;
 
 function showLoadMoreButton(totalHits) {
   const totalPages = Math.ceil(totalHits / perPage);
   const hasChildren = gallery.children.length > 0;
   const isLastPage = totalPages <= currentPage;
+  const hasImages = totalHits > 0;
 
-  if (hasChildren && !isLastPage) {
+  if (hasChildren && !isLastPage && hasImages) {
     loadMoreButton.classList.remove('not-visible');
     loadMoreButton.classList.add('visible');
   } else {
-    console.log('btn');
     loadMoreButton.classList.remove('visible');
     loadMoreButton.classList.add('not-visible');
   }
@@ -41,6 +42,9 @@ function showErrorToastNoImages() {
       position: 'topRight',
       timeout: 3500,
       progressBar: false,
+      onClose: function () {
+        isToastDisplayed = false;
+      },
     });
     isToastDisplayed = true;
   }
@@ -55,6 +59,9 @@ function showCautionToastRechedTheEnd() {
       timeout: 3500,
       progressBar: false,
       color: 'blue',
+      onClose: function () {
+        isToastDisplayed = false;
+      },
     });
     isToastDisplayed = true;
   }
@@ -62,11 +69,46 @@ function showCautionToastRechedTheEnd() {
 
 function showPaginationInfo(totalHits) {
   const totalPages = Math.ceil(totalHits / perPage);
-  paginationInfo.textContent = `Page ${currentPage} of ${totalPages}`;
 
-  if (parseInt(totalPages, 10) <= parseInt(currentPage, 10)) {
+  if (currentPage <= totalPages) {
+    paginationInfo.textContent = `Page ${currentPage} of ${totalPages}`;
     showLoadMoreButton(totalHits);
-    showCautionToastRechedTheEnd();
+    if (currentPage === totalPages) {
+      showCautionToastRechedTheEnd();
+    }
+  }
+}
+
+async function handleImagesRequest(page) {
+  try {
+    loader.classList.remove('hide');
+
+    const response = await fetchImages(page);
+    const images = response.data.hits;
+
+    if (images.length > 0) {
+      displayImages(images);
+      showPaginationInfo(response.data.totalHits);
+
+      if (page > 1) {
+        const cardHeight = gallery.firstElementChild.clientHeight;
+
+        window.scrollBy({
+          top: cardHeight * 2,
+          behavior: 'smooth',
+        });
+      }
+    } else {
+      showErrorToastNoImages();
+    }
+
+    totalHits = response.data.totalHits;
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    showErrorToastNoImages();
+  } finally {
+    loader.classList.add('hide');
+    showLoadMoreButton(totalHits);
   }
 }
 
@@ -79,64 +121,27 @@ form.addEventListener('submit', async function (event) {
   }
 
   loader.classList.remove('hide');
+  paginationInfo.textContent = '';
+  isToastDisplayed = false;
   if (newSearchTerm !== searchTerm) {
     gallery.innerHTML = '';
     searchTerm = newSearchTerm;
     currentPage = 1;
   }
 
-  try {
-    const response = await fetchImages();
-    const images = response.data.hits;
-
-    if (images.length > 0) {
-      displayImages(images);
-      showPaginationInfo(response.data.totalHits);
-      showLoadMoreButton(response.data.totalHits);
-    } else {
-      showErrorToastNoImages();
-    }
-  } catch (error) {
-    console.error('Error fetching data:', error);
-  } finally {
-    loader.classList.add('hide');
-  }
+  await handleImagesRequest(currentPage);
 });
 
 loadMoreButton.addEventListener('click', async function () {
-  loader.classList.remove('hide');
   currentPage++;
-
-  try {
-    const response = await fetchImages();
-    const images = response.data.hits;
-
-    if (images.length > 0) {
-      displayImages(images);
-      showPaginationInfo(response.data.totalHits);
-
-      const cardHeight = gallery.firstElementChild.clientHeight;
-
-      window.scrollBy({
-        top: cardHeight * 2,
-        behavior: 'smooth',
-      });
-    } else {
-      showErrorToastNoImages();
-    }
-  } catch (error) {
-    console.error('Error fetching more data:', error);
-    showErrorToastNoImages();
-  } finally {
-    loader.classList.add('hide');
-    showLoadMoreButton(response.data.totalHits);
-  }
+  isToastDisplayed = false;
+  await handleImagesRequest(currentPage);
 });
 
-async function fetchImages() {
+async function fetchImages(page) {
   const apiUrl = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(
     searchTerm
-  )}&image_type=photo&orientation=horizontal&safesearch=true&page=${currentPage}&per_page=${perPage}`;
+  )}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=${perPage}`;
 
   try {
     loader.classList.remove('hide');
