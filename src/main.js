@@ -10,63 +10,81 @@ const gallery = document.getElementById('gallery');
 const loader = document.querySelector('.loader');
 const loadMoreButton = document.querySelector('.load-more-btn');
 const paginationInfo = document.getElementById('pagination-info');
+const perPage = 200;
 
 const apiKey = '41719954-f83183d98e199e8ea762c32d5';
 let currentPage = 1;
 let searchTerm = '';
+let isToastDisplayed = false;
 
-function showLoadMoreButton() {
-  if (gallery.children.length > 0) {
+function showLoadMoreButton(totalHits) {
+  const totalPages = Math.ceil(totalHits / perPage);
+  const hasChildren = gallery.children.length > 0;
+  const isLastPage = totalPages <= currentPage;
+
+  if (hasChildren && !isLastPage) {
+    loadMoreButton.classList.remove('not-visible');
     loadMoreButton.classList.add('visible');
   } else {
+    console.log('btn');
+    loadMoreButton.classList.remove('visible');
     loadMoreButton.classList.add('not-visible');
   }
 }
 
 function showErrorToastNoImages() {
-  iziToast.error({
-    title: 'Error',
-    message:
-      'Sorry, there are no images matching your search query. Please try again!',
-    position: 'topRight',
-    timeout: 3500,
-    progressBar: false,
-  });
+  if (!isToastDisplayed) {
+    iziToast.error({
+      title: 'Error',
+      message:
+        'Sorry, there are no images matching your search query. Please try again!',
+      position: 'topRight',
+      timeout: 3500,
+      progressBar: false,
+    });
+    isToastDisplayed = true;
+  }
 }
 
 function showCautionToastRechedTheEnd() {
-  iziToast.warning({
-    title: 'Caution',
-    message: "We're sorry, but you've reached the end of search results.",
-    position: 'topRight',
-    timeout: 3500,
-    progressBar: false,
-    color: 'blue',
-  });
+  if (!isToastDisplayed) {
+    iziToast.warning({
+      title: 'Caution',
+      message: "We're sorry, but you've reached the end of search results.",
+      position: 'topRight',
+      timeout: 3500,
+      progressBar: false,
+      color: 'blue',
+    });
+    isToastDisplayed = true;
+  }
 }
 
 function showPaginationInfo(totalHits) {
-  const perPage = 40;
   const totalPages = Math.ceil(totalHits / perPage);
   paginationInfo.textContent = `Page ${currentPage} of ${totalPages}`;
 
   if (parseInt(totalPages, 10) <= parseInt(currentPage, 10)) {
-    loadMoreButton.classList.add('not-visible');
+    console.log('pag');
+    showLoadMoreButton(totalHits);
     showCautionToastRechedTheEnd();
   }
 }
 
 form.addEventListener('submit', async function (event) {
   event.preventDefault();
-  searchTerm = searchInput.value.trim();
+  const newSearchTerm = searchInput.value.trim();
 
-  if (!searchTerm) {
+  if (!newSearchTerm) {
     return;
   }
 
   loader.classList.remove('hide');
-  gallery.innerHTML = '';
-  currentPage = 1;
+  if (newSearchTerm !== searchTerm) {
+    gallery.innerHTML = '';
+    searchTerm = newSearchTerm;
+    currentPage = 1;
+  }
 
   try {
     const response = await fetchImages();
@@ -75,6 +93,7 @@ form.addEventListener('submit', async function (event) {
     if (images.length > 0) {
       displayImages(images);
       showPaginationInfo(response.data.totalHits);
+      showLoadMoreButton(response.data.totalHits);
     } else {
       showErrorToastNoImages();
     }
@@ -82,7 +101,6 @@ form.addEventListener('submit', async function (event) {
     console.error('Error fetching data:', error);
   } finally {
     loader.classList.add('hide');
-    showLoadMoreButton();
   }
 });
 
@@ -99,7 +117,6 @@ loadMoreButton.addEventListener('click', async function () {
       showPaginationInfo(response.data.totalHits);
 
       const cardHeight = gallery.firstElementChild.clientHeight;
-      console.log(cardHeight);
 
       window.scrollBy({
         top: cardHeight * 2,
@@ -113,17 +130,37 @@ loadMoreButton.addEventListener('click', async function () {
     showErrorToastNoImages();
   } finally {
     loader.classList.add('hide');
-    showLoadMoreButton();
+    showLoadMoreButton(response.data.totalHits);
   }
 });
 
-function fetchImages() {
-  const perPage = 40;
+async function fetchImages() {
   const apiUrl = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(
     searchTerm
   )}&image_type=photo&orientation=horizontal&safesearch=true&page=${currentPage}&per_page=${perPage}`;
 
-  return axios.get(apiUrl);
+  try {
+    loader.classList.remove('hide'); // Показати елемент-завантажувача перед запитом
+
+    const response = await axios.get(apiUrl);
+    const images = response.data.hits;
+
+    if (images.length > 0) {
+      displayImages(images);
+      showPaginationInfo(response.data.totalHits);
+      showLoadMoreButton(response.data.totalHits);
+    } else {
+      showErrorToastNoImages();
+    }
+
+    return response;
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    showErrorToastNoImages();
+    throw error; // Передати помилку для обробки в блоку finally
+  } finally {
+    loader.classList.add('hide'); // Приховати елемент-завантажувача після завершення запиту
+  }
 }
 
 function displayImages(images) {

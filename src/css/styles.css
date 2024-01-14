@@ -142,7 +142,7 @@ body {
 }
 
 .load-more-btn {
-  display: none;
+  /* display: none; */
   justify-content: center;
   align-items: center;
   margin-left: 16px;
