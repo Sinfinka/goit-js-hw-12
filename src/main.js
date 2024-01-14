@@ -10,7 +10,7 @@ const gallery = document.getElementById('gallery');
 const loader = document.querySelector('.loader');
 const loadMoreButton = document.querySelector('.load-more-btn');
 const paginationInfo = document.getElementById('pagination-info');
-const perPage = 200;
+const perPage = 40;
 
 const apiKey = '41719954-f83183d98e199e8ea762c32d5';
 let currentPage = 1;
