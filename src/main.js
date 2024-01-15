@@ -11,6 +11,7 @@ const loader = document.querySelector('.loader');
 const loadMoreButton = document.querySelector('.load-more-btn');
 const paginationInfo = document.getElementById('pagination-info');
 const perPage = 40;
+const lightbox = new SimpleLightbox('.gallery a');
 
 const apiKey = '41719954-f83183d98e199e8ea762c32d5';
 let currentPage = 1;
@@ -43,7 +44,7 @@ function showErrorToastNoImages() {
       timeout: 3500,
       progressBar: false,
       onClose: function () {
-        isToastDisplayed = false;
+        // isToastDisplayed = false;
       },
     });
     isToastDisplayed = true;
@@ -60,7 +61,7 @@ function showCautionToastRechedTheEnd() {
       progressBar: false,
       color: 'blue',
       onClose: function () {
-        isToastDisplayed = false;
+        // isToastDisplayed = false;
       },
     });
     isToastDisplayed = true;
@@ -87,7 +88,6 @@ async function handleImagesRequest(page) {
     const images = response.data.hits;
 
     if (images.length > 0) {
-      displayImages(images);
       showPaginationInfo(response.data.totalHits);
 
       if (page > 1) {
@@ -215,7 +215,5 @@ function displayImages(images) {
   });
 
   gallery.appendChild(fragment);
-
-  const lightbox = new SimpleLightbox('.gallery a');
   lightbox.refresh();
 }
